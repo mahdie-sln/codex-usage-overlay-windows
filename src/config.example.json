@@ -1,0 +1,13 @@
+{
+  "refreshSeconds": 60,
+  "opacity": 0.92,
+  "alwaysOnTop": true,
+  "clickThrough": false,
+  "rightMargin": 18,
+  "topMargin": 18,
+  "bottomMargin": 18,
+  "warningThresholds": [20, 10, 5],
+  "apiUsageConsent": false,
+  "codexAuthExecutable": "",
+  "accountExpiryDates": {}
+}

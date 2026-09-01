@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560" role="img" aria-labelledby="title desc">
+  <title id="title">Download the release ZIP from GitHub</title>
+  <desc id="desc">Illustration of a GitHub release with the Windows ZIP highlighted.</desc>
+  <rect width="1100" height="560" rx="24" fill="#0d1117"/>
+  <rect x="36" y="34" width="1028" height="492" rx="16" fill="#0d1117" stroke="#30363d" stroke-width="2"/>
+  <rect x="36" y="34" width="1028" height="54" rx="16" fill="#161b22"/>
+  <circle cx="66" cy="61" r="7" fill="#ff5f57"/><circle cx="90" cy="61" r="7" fill="#febc2e"/><circle cx="114" cy="61" r="7" fill="#28c840"/>
+  <rect x="158" y="48" width="710" height="28" rx="8" fill="#0d1117" stroke="#30363d"/>
+  <text x="180" y="68" fill="#8b949e" font-family="Segoe UI, Arial, sans-serif" font-size="14">github.com/mahdie-sln/codex-usage-overlay-windows/releases/latest</text>
+  <text x="80" y="132" fill="#f0f6fc" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700">Codex Multi-Account Usage Overlay</text>
+  <rect x="80" y="153" width="110" height="29" rx="14" fill="#238636"/>
+  <text x="135" y="173" text-anchor="middle" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="13" font-weight="600">Latest release</text>
+  <text x="80" y="225" fill="#f0f6fc" font-family="Segoe UI, Arial, sans-serif" font-size="21" font-weight="600">Assets</text>
+  <path d="M150 214 l8 8 l-8 8" fill="none" stroke="#8b949e" stroke-width="2"/>
+  <rect x="72" y="248" width="720" height="75" rx="10" fill="#121a25" stroke="#2f81f7" stroke-width="3"/>
+  <circle cx="109" cy="285" r="18" fill="#1f6feb"/>
+  <path d="M109 272 v19 m-8-7 l8 8 l8-8 m-15 15 h14" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="145" y="279" fill="#58a6ff" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="600">CodexUsageOverlay-Windows.zip</text>
+  <text x="145" y="304" fill="#8b949e" font-family="Segoe UI, Arial, sans-serif" font-size="14">Windows release archive</text>
+  <rect x="72" y="337" width="720" height="58" rx="10" fill="#0d1117" stroke="#30363d"/>
+  <circle cx="109" cy="366" r="15" fill="#21262d"/>
+  <text x="109" y="371" text-anchor="middle" fill="#8b949e" font-family="Consolas, monospace" font-size="13">#</text>
+  <text x="145" y="372" fill="#58a6ff" font-family="Segoe UI, Arial, sans-serif" font-size="16">CodexUsageOverlay-Windows.zip.sha256</text>
+  <g>
+    <path d="M830 259 C920 259 920 279 920 295" fill="none" stroke="#6ee7c7" stroke-width="4" stroke-linecap="round"/>
+    <path d="M910 287 l10 10 l10-10" fill="none" stroke="#6ee7c7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="825" y="310" width="205" height="92" rx="14" fill="#10251f" stroke="#2dd4a8" stroke-width="2"/>
+    <text x="927" y="344" text-anchor="middle" fill="#c8fff0" font-family="Segoe UI, Arial, sans-serif" font-size="17" font-weight="700">1. Download the ZIP</text>
+    <text x="927" y="372" text-anchor="middle" fill="#8ed9c5" font-family="Segoe UI, Arial, sans-serif" font-size="14">The checksum is optional</text>
+  </g>
+  <text x="72" y="474" fill="#8b949e" font-family="Segoe UI, Arial, sans-serif" font-size="14">Only download release assets from this repository. No installer executable is bundled.</text>
+</svg>

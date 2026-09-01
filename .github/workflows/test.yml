@@ -1,0 +1,32 @@
+name: Windows package tests
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Validate package
+        shell: powershell
+        run: .\tests\Test-Package.ps1
+      - name: Test usage parser
+        shell: powershell
+        run: .\tests\Test-UsageParser.ps1
+      - name: Test user-level install and uninstall
+        shell: powershell
+        run: .\tests\Test-InstallCycle.ps1
+      - name: Build release archive
+        shell: powershell
+        run: .\tools\Build-Release.ps1

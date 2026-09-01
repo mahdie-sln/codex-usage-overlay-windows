@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">Codex Usage Overlay and Multi-Account Manager for Windows</title>
+  <desc id="desc">A compact Windows overlay for Codex usage monitoring and local multi-account management.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#090f1d"/>
+      <stop offset="0.55" stop-color="#101827"/>
+      <stop offset="1" stop-color="#16243b"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#58e6bf" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#58e6bf" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#58e6bf" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-40%" width="140%" height="180%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000814" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="420" rx="28" fill="url(#bg)"/>
+  <circle cx="1040" cy="40" r="240" fill="#3b82f6" opacity="0.08"/>
+  <circle cx="160" cy="390" r="210" fill="#22c55e" opacity="0.06"/>
+  <rect x="220" y="245" width="760" height="3" fill="url(#glow)"/>
+  <text x="600" y="96" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="700">Codex Usage Overlay &amp; Multi-Account Manager</text>
+  <text x="600" y="140" text-anchor="middle" fill="#9fb0c8" font-family="Segoe UI, Arial, sans-serif" font-size="21">Remaining usage, reset countdowns, and local account switching — always visible.</text>
+  <g filter="url(#shadow)">
+    <rect x="274" y="210" width="652" height="66" rx="14" fill="#111827" stroke="#40506a" stroke-width="2"/>
+    <text x="298" y="251" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="18">CODEX</text>
+    <path d="M365 239 l6 6 l6-6" fill="none" stroke="#93a4bb" stroke-width="2" stroke-linecap="round"/>
+    <line x1="396" y1="224" x2="396" y2="262" stroke="#354257" stroke-width="2"/>
+    <text x="420" y="251" fill="#8ea0b8" font-family="Segoe UI, Arial, sans-serif" font-size="17">5h</text>
+    <text x="454" y="251" fill="#6ee7c7" font-family="Segoe UI, Arial, sans-serif" font-size="19" font-weight="700">73%</text>
+    <text x="510" y="251" fill="#8596ad" font-family="Consolas, monospace" font-size="15">02:14:37</text>
+    <line x1="624" y1="224" x2="624" y2="262" stroke="#354257" stroke-width="2"/>
+    <text x="648" y="251" fill="#8ea0b8" font-family="Segoe UI, Arial, sans-serif" font-size="17">7d</text>
+    <text x="682" y="251" fill="#6ee7c7" font-family="Segoe UI, Arial, sans-serif" font-size="19" font-weight="700">41%</text>
+    <text x="738" y="251" fill="#8596ad" font-family="Consolas, monospace" font-size="15">3d 08h</text>
+    <g fill="#64748b">
+      <circle cx="895" cy="230" r="2"/><circle cx="903" cy="230" r="2"/>
+      <circle cx="895" cy="239" r="2"/><circle cx="903" cy="239" r="2"/>
+      <circle cx="895" cy="248" r="2"/><circle cx="903" cy="248" r="2"/>
+      <circle cx="895" cy="257" r="2"/><circle cx="903" cy="257" r="2"/>
+    </g>
+  </g>
+  <g font-family="Segoe UI, Arial, sans-serif" font-size="16">
+    <rect x="363" y="316" width="150" height="38" rx="19" fill="#17243a" stroke="#2d405f"/>
+    <text x="438" y="341" text-anchor="middle" fill="#b8c8dc">Windows 11</text>
+    <rect x="525" y="316" width="150" height="38" rx="19" fill="#17243a" stroke="#2d405f"/>
+    <text x="600" y="341" text-anchor="middle" fill="#b8c8dc">PowerShell</text>
+    <rect x="687" y="316" width="150" height="38" rx="19" fill="#17243a" stroke="#2d405f"/>
+    <text x="762" y="341" text-anchor="middle" fill="#b8c8dc">MIT License</text>
+  </g>
+</svg>
