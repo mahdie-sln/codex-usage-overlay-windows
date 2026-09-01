@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="500" viewBox="0 0 1100 500" role="img" aria-labelledby="title desc">
+  <title id="title">How to read and move the overlay bar</title>
+  <desc id="desc">The CODEX button, remaining percentages, reset countdowns, and drag handle are labeled.</desc>
+  <rect width="1100" height="500" rx="24" fill="#0b1220"/>
+  <text x="550" y="58" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">Read and move the overlay</text>
+  <rect x="155" y="186" width="790" height="72" rx="14" fill="#111827" stroke="#40506a" stroke-width="2"/>
+  <text x="179" y="231" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="18">CODEX</text>
+  <path d="M247 216 l6 6 l6-6" fill="none" stroke="#93a4bb" stroke-width="2" stroke-linecap="round"/>
+  <line x1="280" y1="200" x2="280" y2="244" stroke="#354257" stroke-width="2"/>
+  <text x="305" y="230" fill="#8ea0b8" font-family="Segoe UI, Arial, sans-serif" font-size="17">5h</text>
+  <text x="340" y="230" fill="#6ee7c7" font-family="Segoe UI, Arial, sans-serif" font-size="19" font-weight="700">73%</text>
+  <text x="400" y="230" fill="#8596ad" font-family="Consolas, monospace" font-size="15">02:14:37</text>
+  <line x1="520" y1="200" x2="520" y2="244" stroke="#354257" stroke-width="2"/>
+  <text x="545" y="230" fill="#8ea0b8" font-family="Segoe UI, Arial, sans-serif" font-size="17">7d</text>
+  <text x="580" y="230" fill="#6ee7c7" font-family="Segoe UI, Arial, sans-serif" font-size="19" font-weight="700">41%</text>
+  <text x="640" y="230" fill="#8596ad" font-family="Consolas, monospace" font-size="15">3d 08h</text>
+  <g fill="#64748b">
+    <circle cx="912" cy="204" r="2"/><circle cx="920" cy="204" r="2"/>
+    <circle cx="912" cy="214" r="2"/><circle cx="920" cy="214" r="2"/>
+    <circle cx="912" cy="224" r="2"/><circle cx="920" cy="224" r="2"/>
+    <circle cx="912" cy="234" r="2"/><circle cx="920" cy="234" r="2"/>
+    <circle cx="912" cy="244" r="2"/><circle cx="920" cy="244" r="2"/>
+  </g>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <circle cx="216" cy="120" r="22" fill="#3b82f6"/><text x="216" y="127" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">1</text>
+    <text x="216" y="91" text-anchor="middle" fill="#b9c8db" font-size="15">Open account list</text>
+    <path d="M216 143 v39" stroke="#60a5fa" stroke-width="3"/>
+    <circle cx="358" cy="326" r="22" fill="#10b981"/><text x="358" y="333" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">2</text>
+    <text x="358" y="368" text-anchor="middle" fill="#b9c8db" font-size="15">5-hour usage remaining</text>
+    <path d="M358 303 v-41" stroke="#34d399" stroke-width="3"/>
+    <circle cx="612" cy="326" r="22" fill="#10b981"/><text x="612" y="333" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">3</text>
+    <text x="612" y="368" text-anchor="middle" fill="#b9c8db" font-size="15">Weekly usage remaining</text>
+    <path d="M612 303 v-41" stroke="#34d399" stroke-width="3"/>
+    <circle cx="915" cy="120" r="22" fill="#8b5cf6"/><text x="915" y="127" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">4</text>
+    <text x="915" y="91" text-anchor="middle" fill="#b9c8db" font-size="15">Drag to reposition</text>
+    <path d="M915 143 v39" stroke="#a78bfa" stroke-width="3"/>
+  </g>
+  <rect x="251" y="413" width="598" height="50" rx="12" fill="#142033" stroke="#2b3c56"/>
+  <text x="550" y="444" text-anchor="middle" fill="#9fb0c8" font-family="Segoe UI, Arial, sans-serif" font-size="15">Green = healthy · orange/red = low remaining · purple = unavailable/error</text>
+</svg>

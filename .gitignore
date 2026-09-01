@@ -1,0 +1,18 @@
+# Per-user configuration and generated state
+config.json
+position.json
+runtime-status.json
+warning-state.json
+install-manifest.json
+logs/
+*.log
+
+# Local test and release output
+test-install/
+dist/
+
+# Editor and OS files
+.vs/
+.vscode/
+Thumbs.db
+.DS_Store

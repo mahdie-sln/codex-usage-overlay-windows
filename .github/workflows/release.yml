@@ -1,0 +1,57 @@
+name: Publish release
+
+on:
+  push:
+    tags:
+      - release
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate package
+        shell: powershell
+        run: .\tests\Test-Package.ps1
+      - name: Test usage parser
+        shell: powershell
+        run: .\tests\Test-UsageParser.ps1
+      - name: Test user-level install and uninstall
+        shell: powershell
+        run: .\tests\Test-InstallCycle.ps1
+      - name: Build release archive
+        shell: powershell
+        run: .\tools\Build-Release.ps1
+      - name: Publish versionless release assets
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release edit $tag `
+              --title 'Codex Usage Overlay & Multi-Account Manager for Windows' `
+              --notes-file .\docs\RELEASE_NOTES.md `
+              --latest
+          } else {
+            gh release create $tag `
+              --title 'Codex Usage Overlay & Multi-Account Manager for Windows' `
+              --notes-file .\docs\RELEASE_NOTES.md `
+              --latest
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Could not create or update the release.' }
+          gh release upload $tag `
+            .\dist\CodexUsageOverlay-Windows.zip `
+            .\dist\CodexUsageOverlay-Windows.zip.sha256 `
+            --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Could not publish the release assets.' }

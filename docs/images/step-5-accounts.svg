@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="720" viewBox="0 0 1100 720" role="img" aria-labelledby="title desc">
+  <title id="title">How to use the account panel</title>
+  <desc id="desc">A sanitized example account list explains switching, refreshing, adding, and removing local logins.</desc>
+  <rect width="1100" height="720" rx="24" fill="#0b1220"/>
+  <text x="550" y="54" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">Manage local accounts</text>
+  <g transform="translate(310,75)">
+    <rect x="0" y="0" width="480" height="580" rx="16" fill="#111827" stroke="#40506a" stroke-width="2"/>
+    <rect x="0" y="0" width="480" height="62" rx="16" fill="#111827"/>
+    <text x="20" y="38" fill="#e5edf7" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="600">ACCOUNTS  4</text>
+    <text x="342" y="38" fill="#9fb0c8" font-family="Segoe UI, Arial, sans-serif" font-size="13">4 accounts</text>
+    <g font-family="Segoe UI, Arial, sans-serif">
+      <rect x="12" y="69" width="456" height="88" rx="10" fill="#1b3154" stroke="#28518b"/>
+      <text x="25" y="97" fill="#ffffff" font-size="15" font-weight="600">primary@example.com</text>
+      <text x="446" y="97" text-anchor="end" fill="#d7e4f7" font-size="12">Plus | ACTIVE</text>
+      <text x="25" y="126" fill="#78f0cf" font-size="13">5H 82% left | reset 02:14</text>
+      <text x="248" y="126" fill="#78f0cf" font-size="13">7D 61% left | reset 3d 08h</text>
+      <rect x="12" y="163" width="456" height="88" rx="10" fill="#141d2c"/>
+      <text x="25" y="191" fill="#ffffff" font-size="15" font-weight="600">work@example.com</text>
+      <text x="446" y="191" text-anchor="end" fill="#9fb0c8" font-size="12">Plus</text>
+      <text x="25" y="220" fill="#78f0cf" font-size="13">5H 55% left | reset 03:41</text>
+      <text x="248" y="220" fill="#78f0cf" font-size="13">7D 43% left | reset 5d 01h</text>
+      <rect x="12" y="257" width="456" height="88" rx="10" fill="#141d2c"/>
+      <text x="25" y="285" fill="#ffffff" font-size="15" font-weight="600">testing@example.com</text>
+      <text x="446" y="285" text-anchor="end" fill="#9fb0c8" font-size="12">Free</text>
+      <text x="25" y="314" fill="#ff7272" font-size="13">5H 0% left | reset 00:18</text>
+      <text x="248" y="314" fill="#f4b84d" font-size="13">7D 9% left | reset 1d 09h</text>
+      <rect x="12" y="351" width="456" height="88" rx="10" fill="#141d2c"/>
+      <text x="25" y="379" fill="#ffffff" font-size="15" font-weight="600">old-login@example.com</text>
+      <text x="446" y="379" text-anchor="end" fill="#9fb0c8" font-size="12">Plus</text>
+      <text x="25" y="408" fill="#c084fc" font-size="13">5H error</text>
+      <text x="248" y="408" fill="#c084fc" font-size="13">7D error</text>
+      <rect x="60" y="375" width="220" height="44" rx="6" fill="#172033" stroke="#526078"/>
+      <path d="M78 389 h10 v-6 l11 8 l-11 8 v-6 h-10z" fill="#ff8d98"/>
+      <text x="112" y="403" fill="#ff8d98" font-size="14">Log out &amp; remove</text>
+      <line x1="14" y1="464" x2="466" y2="464" stroke="#2a374b"/>
+      <rect x="18" y="485" width="112" height="40" rx="9" fill="#1c3152" stroke="#315a91"/>
+      <text x="74" y="510" text-anchor="middle" fill="#e4efff" font-size="14">Refresh</text>
+      <rect x="333" y="485" width="129" height="40" rx="9" fill="#1c3152" stroke="#315a91"/>
+      <text x="397" y="510" text-anchor="middle" fill="#e4efff" font-size="14">+ New login</text>
+      <text x="20" y="558" fill="#718198" font-size="12">Updated 12:03:16</text>
+    </g>
+  </g>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <circle cx="190" cy="172" r="22" fill="#3b82f6"/><text x="190" y="179" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">1</text>
+    <text x="190" y="137" text-anchor="middle" fill="#c4d1e3" font-size="15" font-weight="600">Click a row to switch</text>
+    <text x="190" y="211" text-anchor="middle" fill="#8fa1b9" font-size="13">Restart Codex afterward</text>
+    <path d="M215 173 H302" stroke="#60a5fa" stroke-width="3"/>
+    <circle cx="924" cy="416" r="22" fill="#ef476f"/><text x="924" y="423" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">2</text>
+    <text x="924" y="378" text-anchor="middle" fill="#c4d1e3" font-size="15" font-weight="600">Right-click to remove</text>
+    <text x="924" y="455" text-anchor="middle" fill="#8fa1b9" font-size="13">A confirmation appears first</text>
+    <path d="M900 416 H793" stroke="#fb7185" stroke-width="3"/>
+    <circle cx="203" cy="590" r="22" fill="#10b981"/><text x="203" y="597" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">3</text>
+    <text x="203" y="630" text-anchor="middle" fill="#c4d1e3" font-size="15" font-weight="600">Refresh every account</text>
+    <path d="M226 590 H323" stroke="#34d399" stroke-width="3"/>
+    <circle cx="912" cy="590" r="22" fill="#8b5cf6"/><text x="912" y="597" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">4</text>
+    <text x="912" y="630" text-anchor="middle" fill="#c4d1e3" font-size="15" font-weight="600">Add another login</text>
+    <path d="M888 590 H782" stroke="#a78bfa" stroke-width="3"/>
+  </g>
+  <text x="550" y="691" text-anchor="middle" fill="#8294aa" font-family="Segoe UI, Arial, sans-serif" font-size="13">All addresses in this illustration are synthetic. The project never bundles account data.</text>
+</svg>

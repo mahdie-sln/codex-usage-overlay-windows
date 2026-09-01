@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a reproducible overlay, installer, or account-panel problem.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste tokens, cookies, authorization headers, raw authentication files, or unredacted account lists.
+  - type: input
+    id: version
+    attributes:
+      label: Release tag or commit
+      placeholder: release or a commit ID
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 24H2
+    validations:
+      required: true
+  - type: input
+    id: codex_auth
+    attributes:
+      label: codex-auth version
+      description: Run codex-auth --version. Do not include account output.
+      placeholder: 0.2.10
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: Tell us exactly what you clicked or ran.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed account addresses and confirmed that no credentials or authentication data are included.
+          required: true
