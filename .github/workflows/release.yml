@@ -40,8 +40,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = $env:GITHUB_REF_NAME
-          gh release view $tag *> $null
-          if ($LASTEXITCODE -eq 0) {
+          $releaseUri = "https://api.github.com/repos/$env:GITHUB_REPOSITORY/releases/tags/$tag"
+          $headers = @{
+            Authorization = "Bearer $env:GH_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'User-Agent' = 'codex-usage-overlay-release'
+          }
+          try {
+            Invoke-RestMethod -Uri $releaseUri -Headers $headers | Out-Null
+            $releaseExists = $true
+          } catch {
+            if ([int]$_.Exception.Response.StatusCode -ne 404) { throw }
+            $releaseExists = $false
+          }
+          if ($releaseExists) {
             gh release edit $tag `
               --title "Codex Usage Overlay & Multi-Account Manager for Windows $tag" `
               --notes-file .\docs\RELEASE_NOTES.md `
