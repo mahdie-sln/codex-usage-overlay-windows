@@ -15,9 +15,14 @@ Raw command output is held in memory only. It is not written to project files or
 logs. Authentication tokens, cookies, and authorization headers are never
 displayed or logged by the overlay.
 
+The overlay also reads each `codex-auth` account snapshot in memory to obtain
+the existing access token. It sends read-only GET requests to OpenAI's usage
+and subscriptions endpoints for the available banked-reset count, paid-period
+date, and renewal status. Tokens and raw responses are never saved.
+
 ## Network access
 
-The overlay does not contain its own HTTP client. It runs:
+The overlay runs:
 
 ```text
 codex-auth list --api
@@ -31,12 +36,20 @@ locally stored ChatGPT access token to these OpenAI endpoints:
 
 The upstream project warns that API mode may carry account or terms-of-service
 risk. Installation requires explicit consent before this refresh is enabled.
+The overlay's additional GET requests go only to
+`https://chatgpt.com/backend-api/wham/usage` and
+`https://chatgpt.com/backend-api/subscriptions`. They use the same local account
+token and do not perform account-changing requests.
 
 ## Local files written
 
 The installed directory may contain:
 
 - `config.json`: non-secret user settings and optional account expiry dates.
+- `account-extras-cache.json`: account email, banked reset count, paid-period
+  date, and renewal status only; refreshed every five minutes.
+- `signed-out-accounts.json`: email and plan label reminders for local logins
+  the user explicitly removed. It contains no authentication data.
 - `position.json`: the last overlay position.
 - `runtime-status.json`: process state and active-account usage totals, without
   email addresses or credentials.
@@ -52,6 +65,14 @@ Clicking an inactive account runs `codex-auth switch --skip-api` after validatin
 that the selected row still identifies the same account. Clicking **New login**
 runs `codex-auth login --device-auth` in a visible terminal. No account-changing
 command runs without a corresponding user click.
+
+Clicking a signed-out reminder starts `codex-auth login --device-auth` in a
+visible terminal and opens OpenAI's device page. Codex displays a one-time code;
+the overlay cannot select an email or handle the password. When the selected
+email appears again in the local list, its
+reminder is removed. Right-click **Forget saved email** removes only the local
+reminder. A manually entered paid-access end date stays in `config.json` until
+the user clears it.
 
 Right-clicking an account and choosing **Log out & remove** requires a second
 confirmation, then runs `codex-auth remove <email>` only after revalidating the

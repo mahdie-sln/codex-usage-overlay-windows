@@ -106,12 +106,13 @@ foreach ($directory in $ownedDirectories) {
 }
 
 $fixedKnownFiles = @(
-    'CodexUsageOverlay.ps1', 'CodexOverlayWatcher.ps1', 'Get-CodexAccounts.ps1',
-    'Switch-CodexAccount.ps1', 'Remove-CodexAccount.ps1', 'Start-CodexAuthLogin.ps1', 'Start-CodexUsageOverlay.vbs',
+    'CodexUsageOverlay.ps1', 'CodexOverlayWatcher.ps1', 'Get-CodexAccounts.ps1', 'Get-AccountExtras.ps1',
+    'Switch-CodexAccount.ps1', 'Remove-CodexAccount.ps1', 'Start-CodexAuthLogin.ps1', 'AccountStatus.ps1', 'Start-CodexUsageOverlay.vbs',
     'Start-CodexOverlayWatcher.vbs', 'Restart-CodexUsageOverlay.vbs', 'config.example.json',
     'Install.ps1', 'Uninstall.ps1', 'README.md', 'README.txt', 'PRIVACY.md', 'SECURITY.md',
     'THIRD_PARTY_NOTICES.md', 'LICENSE', 'VERSION', 'position.json', 'runtime-status.json',
-    'warning-state.json', 'install-manifest.json'
+    'warning-state.json', 'signed-out-accounts.json', 'signed-out-accounts.json.tmp',
+    'config.json.tmp', 'install-manifest.json', 'account-extras-cache.json', 'account-extras-cache.json.tmp'
 )
 
 foreach ($directory in $ownedDirectories) {

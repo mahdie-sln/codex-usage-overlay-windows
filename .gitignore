@@ -4,6 +4,8 @@ position.json
 runtime-status.json
 warning-state.json
 install-manifest.json
+account-extras-cache.json
+account-extras-cache.json.tmp
 logs/
 *.log
 

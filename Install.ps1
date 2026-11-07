@@ -202,6 +202,8 @@ $payloadFiles = @(
     'src\CodexUsageOverlay.ps1',
     'src\CodexOverlayWatcher.ps1',
     'src\Get-CodexAccounts.ps1',
+    'src\Get-AccountExtras.ps1',
+    'src\AccountStatus.ps1',
     'src\Switch-CodexAccount.ps1',
     'src\Remove-CodexAccount.ps1',
     'src\Start-CodexAuthLogin.ps1',
@@ -257,11 +259,19 @@ if (-not (Test-Path -LiteralPath $positionPath -PathType Leaf) -and $legacyDirec
     }
 }
 
+$signedOutPath = Join-Path $targetDirectory 'signed-out-accounts.json'
+if (-not (Test-Path -LiteralPath $signedOutPath -PathType Leaf) -and $legacyDirectory) {
+    $legacySignedOutPath = Join-Path $legacyDirectory 'signed-out-accounts.json'
+    if (Test-Path -LiteralPath $legacySignedOutPath -PathType Leaf) {
+        Copy-Item -LiteralPath $legacySignedOutPath -Destination $signedOutPath -Force
+    }
+}
+
 $installedPayloadNames = @($payloadFiles | ForEach-Object { Split-Path -Leaf $_ })
 $manifest = [ordered]@{
     product = 'Codex Usage Overlay & Multi-Account Manager'
     installedAtUtc = [DateTime]::UtcNow.ToString('o')
-    files = @($installedPayloadNames + 'config.json')
+    files = @($installedPayloadNames + 'config.json' + 'signed-out-accounts.json')
 }
 $manifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $targetDirectory 'install-manifest.json') -Encoding UTF8
 

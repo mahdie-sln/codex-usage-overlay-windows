@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560" role="img" aria-labelledby="title desc">
+  <title id="title">Account end dates and sign-in reminders</title>
+  <desc id="desc">A synthetic account panel illustrates banked reset counts, paid-period dates, and a click-to-sign-in reminder.</desc>
+  <rect width="1100" height="560" rx="24" fill="#0b1220"/>
+  <text x="550" y="57" text-anchor="middle" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">Account dates and sign-in reminders</text>
+  <g transform="translate(280,92)" font-family="Segoe UI, Arial, sans-serif">
+    <rect width="540" height="394" rx="15" fill="#111827" stroke="#40506a" stroke-width="2"/>
+    <text x="20" y="36" fill="#e5edf7" font-size="15" font-weight="600">ACCOUNTS  2  |  SIGNED OUT  1</text>
+    <rect x="12" y="60" width="516" height="84" rx="9" fill="#1b3154"/>
+    <rect x="13" y="68" width="3" height="68" rx="1" fill="#60a5fa"/>
+    <text x="27" y="89" fill="#f8fafc" font-size="15" font-weight="600">alpha@example.com</text>
+    <text x="508" y="89" text-anchor="end" fill="#bfdbfe" font-size="12">Plus | 2 | Renews: 23 days left</text>
+    <text x="27" y="119" fill="#78f0cf" font-size="13">5H 68% left | 14:30</text>
+    <text x="278" y="119" fill="#78f0cf" font-size="13">7D 41% left | 10:00 10 Nov</text>
+    <rect x="12" y="151" width="516" height="84" rx="9" fill="#172033"/>
+    <text x="27" y="180" fill="#f8fafc" font-size="15" font-weight="600">beta@example.com</text>
+    <text x="508" y="180" text-anchor="end" fill="#9fb0c8" font-size="12">Plus | -- | Sign in to update</text>
+    <text x="27" y="210" fill="#78f0cf" font-size="13">5H 55% left | 12:10</text>
+    <text x="278" y="210" fill="#78f0cf" font-size="13">7D 43% left | 09:30 12 Nov</text>
+    <rect x="12" y="242" width="516" height="84" rx="9" fill="#172033" stroke="#34455f"/>
+    <text x="27" y="271" fill="#f8fafc" font-size="15" font-weight="600">gamma@example.com</text>
+    <text x="508" y="271" text-anchor="end" fill="#9fb0c8" font-size="12">Plus | -- | 9 days left</text>
+    <text x="27" y="301" fill="#718198" font-size="13">5H signed out</text>
+    <text x="278" y="301" fill="#718198" font-size="13">7D signed out</text>
+    <line x1="16" y1="342" x2="524" y2="342" stroke="#2a374b"/>
+    <rect x="18" y="351" width="98" height="30" rx="7" fill="#1c3152" stroke="#315a91"/>
+    <text x="67" y="371" text-anchor="middle" fill="#e4efff" font-size="12">Refresh</text>
+    <rect x="413" y="351" width="109" height="30" rx="7" fill="#1c3152" stroke="#315a91"/>
+    <text x="467" y="371" text-anchor="middle" fill="#e4efff" font-size="12">+ New login</text>
+  </g>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <circle cx="135" cy="173" r="22" fill="#3b82f6"/><text x="135" y="180" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">1</text>
+    <text x="135" y="132" text-anchor="middle" fill="#c4d1e3" font-size="15" font-weight="600">2 banked resets</text>
+    <text x="135" y="213" text-anchor="middle" fill="#8fa1b9" font-size="13">Read from OpenAI usage</text>
+    <path d="M159 173 H272" stroke="#60a5fa" stroke-width="3"/>
+    <circle cx="958" cy="267" r="22" fill="#8b5cf6"/><text x="958" y="274" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">2</text>
+    <text x="958" y="225" text-anchor="middle" fill="#c4d1e3" font-size="15" font-weight="600">Paid-period date</text>
+    <text x="958" y="307" text-anchor="middle" fill="#8fa1b9" font-size="13">Read live from OpenAI</text>
+    <path d="M934 267 H828" stroke="#a78bfa" stroke-width="3"/>
+    <circle cx="143" cy="373" r="22" fill="#10b981"/><text x="143" y="380" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">3</text>
+    <text x="143" y="333" text-anchor="middle" fill="#c4d1e3" font-size="15" font-weight="600">Click to sign in again</text>
+    <text x="143" y="414" text-anchor="middle" fill="#8fa1b9" font-size="13">Choose the email in the browser</text>
+    <path d="M167 373 H272" stroke="#34d399" stroke-width="3"/>
+  </g>
+  <text x="550" y="522" text-anchor="middle" fill="#8294aa" font-family="Segoe UI, Arial, sans-serif" font-size="13">Illustration uses synthetic accounts. A paid period may renew automatically.</text>
+</svg>

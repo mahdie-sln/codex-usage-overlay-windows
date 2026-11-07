@@ -40,7 +40,7 @@ try {
     $powerShellPath = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
     $readerPath = Join-Path $repositoryRoot 'src\Get-CodexAccounts.ps1'
     $output = & $powerShellPath -NoLogo -NoProfile -ExecutionPolicy Bypass `
-        -File $readerPath -CodexAuthExecutable $fakeCliPath 2>&1
+        -File $readerPath -CodexAuthExecutable $fakeCliPath -SkipAccountExtras 2>&1
     if ($LASTEXITCODE -ne 0) {
         throw "Usage reader exited with code $LASTEXITCODE."
     }

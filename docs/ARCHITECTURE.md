@@ -10,9 +10,11 @@ project-owned backend, analytics, or updater.
 | `CodexUsageOverlay.ps1` | Renders the no-activation WPF bar, account panel, and tray controls. |
 | `CodexOverlayWatcher.ps1` | Starts the overlay while Codex is running and stops it after Codex exits. |
 | `Get-CodexAccounts.ps1` | Runs `codex-auth list --api` and converts its table output to bounded JSON fields. |
+| `Get-AccountExtras.ps1` | Reads local account snapshots in memory and queries OpenAI usage and subscriptions endpoints for banked resets and the live paid-period date. |
+| `AccountStatus.ps1` | Calculates days from paid-access dates and validates the local signed-out email reminder file. |
 | `Switch-CodexAccount.ps1` | Revalidates a selected row, then performs one explicit account switch. |
 | `Remove-CodexAccount.ps1` | Revalidates the selected account and removes only that local login. |
-| `Start-CodexAuthLogin.ps1` | Opens the interactive device-login flow after a user action. |
+| `Start-CodexAuthLogin.ps1` | Opens device login for new accounts or browser login for a signed-out reminder. |
 | `Install.ps1` / `Uninstall.ps1` | Manage per-user files, shortcuts, and the scheduled watcher task. |
 
 ## Runtime flow
@@ -28,14 +30,15 @@ project-owned backend, analytics, or updater.
 
 ## Trust boundaries
 
-- The overlay never reads Codex authentication files directly.
-- All authentication and OpenAI endpoint access is delegated to the external
-  `codex-auth` dependency.
-- Runtime files do not implement direct network requests.
+- The overlay reads `codex-auth` account snapshots in memory for the existing
+  access token. It never writes to those snapshots.
+- `codex-auth` handles the usage table and all user-triggered account actions.
+  The extras helper makes GET requests only to OpenAI's usage and subscriptions
+  endpoints.
 - Account selection helpers re-read the current list and verify the selected
   row before changing local account state.
-- Logs and generated state are limited to timestamps, display preferences,
-  usage values, reset times, and application errors.
+- The signed-out reminder file contains email addresses and plan labels only.
+  Logs contain no account labels, emails, or authentication values.
 
 See [PRIVACY.md](PRIVACY.md) for the data-access model and
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency ownership.

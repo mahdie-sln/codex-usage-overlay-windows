@@ -19,6 +19,9 @@ and every account already managed by `codex-auth`.
 - Stays above other windows without taking keyboard focus from Codex.
 - Opens a compact account panel when you click **CODEX**.
 - Shows usage and reset information for every locally signed-in account.
+- Shows available OpenAI-granted banked resets independently of dates. It reads
+  each account's current paid-period end and renewal status directly from
+  OpenAI. A manual date remains an optional fallback.
 - Sorts refreshed accounts by usable capacity, followed by 0% accounts, then
   unavailable/error rows.
 - Switches accounts only after an explicit click, using
@@ -26,6 +29,8 @@ and every account already managed by `codex-auth`.
 - Adds accounts with `codex-auth login --device-auth`.
 - Removes a selected local login only after a right-click and confirmation,
   using the exact `codex-auth remove <email>` command.
+- Keeps a signed-out email reminder after removal; click it to open OpenAI's
+  device login page and the matching one-time code, then choose that email.
 - Starts automatically when the Codex desktop app opens.
 - Provides Refresh, Restart, Show/Hide, Autostart, and Exit controls in the
   Windows system tray.
@@ -67,15 +72,16 @@ may carry account or terms-of-service risk. Read the upstream project and this
 repository's [privacy statement](docs/PRIVACY.md) before installing.
 
 The overlay itself has no analytics, telemetry, update server, or project-owned
-backend. It does not display, copy, bundle, upload, or log authentication
-tokens. Raw command output is parsed in memory and discarded.
+backend. It reads the existing local account tokens in memory to request banked
+reset counts from OpenAI's usage endpoint. It does not display, save, bundle,
+or log authentication tokens. Raw responses are parsed in memory and discarded.
 
 ## Install — step by step
 
 ### 1. Download the release ZIP
 
 Open [Releases](https://github.com/mahdie-sln/codex-usage-overlay-windows/releases/latest),
-expand **Assets**, and download the file ending in `-windows.zip`. Download the
+expand **Assets**, and download `CodexUsageOverlay-Windows.zip`. Download the
 matching `.sha256` file if you want to verify the archive.
 
 ![Download the release archive](docs/images/step-1-download.svg)
@@ -135,7 +141,33 @@ remembers its last position.
   terminal/browser flow.
 - **Remove local login:** right-click an account, choose **Log out & remove**,
   review the selected email, and confirm. This removes only that local
-  `codex-auth` login; it does not delete the online OpenAI account.
+  `codex-auth` login; it does not delete the online OpenAI account. The email
+  remains as a signed-out reminder in the panel.
+- **Sign in again:** click a signed-out email. The overlay starts
+  `codex-auth login --device-auth`, opens
+  `https://auth.openai.com/codex/device`, and shows the one-time code in the
+  terminal. Enter the code, then select the displayed email in OpenAI's page.
+  The device flow does not support preselecting an email or entering a password
+  on behalf of the user. After successful sign-in, the reminder disappears
+  when the account list refreshes.
+- **Update an expired login:** if a row says **Sign in to update**, click that
+  row or the status text to start the same device login for its email.
+- **Forget a reminder:** right-click a signed-out email and choose
+  **Forget saved email**. This only removes the overlay reminder.
+- **Banked resets:** the plain number beside each plan is the available
+  OpenAI-granted reset count. It is independent of the account end date. `--`
+  means the count could not be read. The count is refreshed at most every five
+  minutes.
+- **Paid period:** the overlay requests the live subscription date from OpenAI.
+  If renewal is on, the row says `Renews: ...`; if renewal is off, it shows days
+  left until the current paid access ends. An authorization error shows
+  `Sign in to update` rather than an old date.
+- **End date override:** click the date beside an email, or right-click the row
+  and choose **Set end date...**. Enter the date paid access actually ends in
+  the separate Year, Month, and Day boxes. The live OpenAI date takes precedence;
+  a manual date is used only when a live date is unavailable.
+
+![Account dates and sign-in reminders](docs/images/step-6-account-status.svg)
 - **Refresh:** click **Refresh** in the lower-left corner.
 - **Close the panel:** click **CODEX** again or click anywhere outside it.
 
@@ -166,8 +198,12 @@ The installed configuration file is:
 Restart the overlay after editing it. Available settings are documented in
 [`config.example.json`](src/config.example.json).
 
-`codex-auth list --api` does not return subscription-expiry dates. The overlay
-therefore never guesses them. If you know an expiry date, add it manually under
+`codex-auth list --api` does not expose subscription dates or banked-reset
+counts in its table. The overlay requests them from OpenAI's read-only usage
+and subscriptions endpoints with the existing local account login. If OpenAI
+rejects an account with HTTP 401, its date cannot be refreshed until that
+account is signed in again. An automatically renewing account may stay paid
+after the displayed period ends. Manual dates are optional fallbacks in
 `accountExpiryDates` in `config.json`.
 
 ## Update

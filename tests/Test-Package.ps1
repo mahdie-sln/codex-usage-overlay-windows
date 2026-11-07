@@ -10,18 +10,19 @@ $requiredFiles = @(
     '.github\workflows\release.yml',
     '.github\dependabot.yml',
     'src\config.example.json', 'src\CodexUsageOverlay.ps1',
-    'src\CodexOverlayWatcher.ps1', 'src\Get-CodexAccounts.ps1',
+    'src\CodexOverlayWatcher.ps1', 'src\Get-CodexAccounts.ps1', 'src\Get-AccountExtras.ps1', 'src\AccountStatus.ps1',
     'src\Switch-CodexAccount.ps1', 'src\Remove-CodexAccount.ps1',
     'src\Start-CodexAuthLogin.ps1', 'src\Start-CodexUsageOverlay.vbs',
     'src\Start-CodexOverlayWatcher.vbs', 'src\Restart-CodexUsageOverlay.vbs',
     'docs\ARCHITECTURE.md', 'docs\PRIVACY.md', 'docs\RELEASE_NOTES.md',
     'docs\THIRD_PARTY_NOTICES.md', 'docs\TESTING.md',
     'docs\CHANGELOG.md',
-    'tests\Test-UsageParser.ps1',
+    'tests\Test-UsageParser.ps1', 'tests\Test-AccountStatus.ps1',
     'tools\Build-Release.ps1',
     'docs\images\hero.png', 'docs\images\step-1-download.png',
     'docs\images\step-2-powershell.png', 'docs\images\step-3-install.png',
-    'docs\images\step-4-bar.png', 'docs\images\step-5-accounts.png'
+    'docs\images\step-4-bar.png', 'docs\images\step-5-accounts.png',
+    'docs\images\step-6-account-status.svg'
 )
 foreach ($relativePath in $requiredFiles) {
     if (-not (Test-Path -LiteralPath (Join-Path $repositoryRoot $relativePath) -PathType Leaf)) {
@@ -30,8 +31,8 @@ foreach ($relativePath in $requiredFiles) {
 }
 
 $forbiddenGeneratedNames = @(
-    'config.json', 'position.json', 'runtime-status.json', 'warning-state.json',
-    'install-manifest.json', 'overlay.log', 'preview.log'
+    'config.json', 'position.json', 'runtime-status.json', 'warning-state.json', 'signed-out-accounts.json',
+    'install-manifest.json', 'overlay.log', 'preview.log', 'account-extras-cache.json'
 )
 foreach ($file in @(Get-ChildItem -LiteralPath $repositoryRoot -Recurse -File)) {
     if ($forbiddenGeneratedNames -contains $file.Name) {
@@ -99,13 +100,20 @@ try {
 $runtimeFiles = @(
     'src\CodexUsageOverlay.ps1', 'src\CodexOverlayWatcher.ps1',
     'src\Get-CodexAccounts.ps1', 'src\Switch-CodexAccount.ps1',
-    'src\Remove-CodexAccount.ps1', 'src\Start-CodexAuthLogin.ps1'
+    'src\Remove-CodexAccount.ps1', 'src\Start-CodexAuthLogin.ps1', 'src\AccountStatus.ps1'
 )
 foreach ($relativePath in $runtimeFiles) {
     $content = Get-Content -LiteralPath (Join-Path $repositoryRoot $relativePath) -Raw
     if ($content -match '(?i)Invoke-WebRequest|Invoke-RestMethod|System\.Net\.Http|WebClient|chatgpt\.com/backend-api') {
         Add-Failure "Direct network implementation detected in $relativePath"
     }
+}
+$extrasContent = Get-Content -LiteralPath (Join-Path $repositoryRoot 'src\Get-AccountExtras.ps1') -Raw
+if ($extrasContent -notmatch [regex]::Escape('https://chatgpt.com/backend-api/wham/usage') -or
+    $extrasContent -notmatch [regex]::Escape('https://chatgpt.com/backend-api/subscriptions') -or
+    $extrasContent -match '(?i)Invoke-RestMethod\s+-Method\s+(Post|Put|Patch|Delete)' -or
+    $extrasContent -match '(?i)Invoke-WebRequest|System\.Net\.Http|WebClient') {
+    Add-Failure 'Account extras helper must use only the reviewed read-only OpenAI requests.'
 }
 
 $removeContent = Get-Content -LiteralPath (Join-Path $repositoryRoot 'src\Remove-CodexAccount.ps1') -Raw

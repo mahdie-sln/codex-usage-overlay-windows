@@ -1,5 +1,22 @@
 # Changelog
 
+## v1.1.0
+
+- Read available banked resets from the OpenAI usage response, independently of
+  any account end date.
+- Fetch the live paid-period date and renewal status from OpenAI, with a manual
+  paid-access end-date fallback when the account cannot be queried.
+- Rebuilt the date editor with a dark rounded window and separate Year, Month,
+  and Day fields.
+
+## Account end dates and sign-in reminders
+
+- Added per-account manual paid-access end dates and days remaining.
+- Preserved a minimal email and plan reminder after an explicit local logout.
+  Clicking it opens Codex browser sign-in; the user selects the account there.
+- Added a right-click action to forget a signed-out reminder without changing
+  any Codex account.
+
 ## Initial public release
 
 - Reorganized the repository into `src`, `docs`, `tests`, and `.github` areas.

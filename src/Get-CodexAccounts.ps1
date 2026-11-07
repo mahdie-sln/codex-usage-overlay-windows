@@ -1,5 +1,6 @@
 param(
-    [string]$CodexAuthExecutable = ''
+    [string]$CodexAuthExecutable = '',
+    [switch]$SkipAccountExtras
 )
 
 $ErrorActionPreference = 'Stop'
@@ -191,6 +192,35 @@ try {
     if ($accounts.Count -eq 0) {
         Write-Result ([ordered]@{ ok = $false; errorCode = 'no_accounts_parsed'; accounts = @() })
         exit 0
+    }
+
+    if (-not $SkipAccountExtras) {
+        try {
+            $extrasPath = Join-Path $PSScriptRoot 'Get-AccountExtras.ps1'
+            if (Test-Path -LiteralPath $extrasPath -PathType Leaf) {
+                $cachePath = Join-Path $PSScriptRoot 'account-extras-cache.json'
+                $extras = (& $extrasPath -CachePath $cachePath | ConvertFrom-Json)
+                if ($extras.ok) {
+                    $lookup = @{}
+                    foreach ($item in @($extras.accounts)) { $lookup[[string]$item.email] = $item }
+                    foreach ($account in $accounts) {
+                        $account | Add-Member -NotePropertyName bankedResets -NotePropertyValue $null
+                        $account | Add-Member -NotePropertyName paidUntil -NotePropertyValue $null
+                        $account | Add-Member -NotePropertyName willRenew -NotePropertyValue $null
+                        $account | Add-Member -NotePropertyName checkedAtUtc -NotePropertyValue $null
+                        $account | Add-Member -NotePropertyName subscriptionStatus -NotePropertyValue 'unavailable'
+                        if ($lookup.ContainsKey([string]$account.email)) {
+                            $item = $lookup[[string]$account.email]
+                            $account.bankedResets = $item.bankedResets
+                            $account.paidUntil = $item.paidUntil
+                            $account.willRenew = $item.willRenew
+                            $account.checkedAtUtc = $item.checkedAtUtc
+                            $account.subscriptionStatus = $item.subscriptionStatus
+                        }
+                    }
+                }
+            }
+        } catch { }
     }
 
     Write-Result ([ordered]@{

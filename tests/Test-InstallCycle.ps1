@@ -47,8 +47,8 @@ while ($true) { Start-Sleep -Seconds 30 }
     if (-not $legacyProcess.HasExited) { throw 'Installer left the legacy overlay process running.' }
 
     $requiredInstalledFiles = @(
-        'CodexUsageOverlay.ps1', 'CodexOverlayWatcher.ps1', 'Get-CodexAccounts.ps1',
-        'Switch-CodexAccount.ps1', 'Start-CodexAuthLogin.ps1', 'Start-CodexUsageOverlay.vbs',
+        'CodexUsageOverlay.ps1', 'CodexOverlayWatcher.ps1', 'Get-CodexAccounts.ps1', 'Get-AccountExtras.ps1',
+        'Switch-CodexAccount.ps1', 'Start-CodexAuthLogin.ps1', 'AccountStatus.ps1', 'Start-CodexUsageOverlay.vbs',
         'Remove-CodexAccount.ps1', 'Restart-CodexUsageOverlay.vbs', 'config.json',
         'position.json', 'install-manifest.json', 'Uninstall.ps1'
     )

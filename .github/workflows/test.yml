@@ -24,6 +24,9 @@ jobs:
       - name: Test usage parser
         shell: powershell
         run: .\tests\Test-UsageParser.ps1
+      - name: Test account status
+        shell: powershell
+        run: .\tests\Test-AccountStatus.ps1
       - name: Test user-level install and uninstall
         shell: powershell
         run: .\tests\Test-InstallCycle.ps1

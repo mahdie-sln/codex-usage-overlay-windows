@@ -29,6 +29,8 @@ $accountsReaderPath = Join-Path $installDirectory 'Get-CodexAccounts.ps1'
 $accountSwitchPath = Join-Path $installDirectory 'Switch-CodexAccount.ps1'
 $accountRemovePath = Join-Path $installDirectory 'Remove-CodexAccount.ps1'
 $newLoginPath = Join-Path $installDirectory 'Start-CodexAuthLogin.ps1'
+$accountStatusPath = Join-Path $installDirectory 'AccountStatus.ps1'
+$signedOutAccountsPath = Join-Path $installDirectory 'signed-out-accounts.json'
 $startupLink = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::Startup)) 'Codex Usage Overlay.lnk'
 $autostartTaskName = 'Codex Usage Overlay'
 $null = New-Item -ItemType Directory -Path $logDirectory -Force
@@ -89,6 +91,9 @@ function Get-OverlayConfig {
 }
 
 $config = Get-OverlayConfig
+if (-not (Test-Path -LiteralPath $accountStatusPath -PathType Leaf)) { throw 'Account status helper is missing.' }
+. $accountStatusPath
+$script:signedOutAccounts = @(Read-SignedOutAccounts -Path $signedOutAccountsPath)
 
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
@@ -683,7 +688,7 @@ function Write-RuntimeStatus {
             processId = $PID
             state = $State
             source = 'codex-auth list --api'
-            accountCount = $script:accounts.Count
+            accountCount = @($script:accounts | Where-Object { -not $_.signedOut }).Count
             activeRow = $script:activeRowNumber
             lastRefreshUtc = if ($script:lastSuccessfulRefreshUtc) { $script:lastSuccessfulRefreshUtc.ToString('o') } else { $null }
             fiveHour = $script:fiveHourUsage
@@ -740,32 +745,250 @@ function Convert-SafeAccount {
         if ([string]::IsNullOrWhiteSpace($label) -or $label.Length -gt 180) { return $null }
         if ($email.Length -gt 180) { $email = $email.Substring(0, 180) }
         if ($plan.Length -gt 32) { $plan = $plan.Substring(0, 32) }
+        $bankedResets = $null
+        if ($null -ne $InputAccount.bankedResets -and [string]$InputAccount.bankedResets -match '^\d{1,3}$') {
+            $bankedResets = [int]$InputAccount.bankedResets
+        }
+        $paidUntil = [string]$InputAccount.paidUntil
+        if ($paidUntil -notmatch '^\d{4}-\d{2}-\d{2}$') { $paidUntil = '' }
+        $willRenew = $null
+        if ($InputAccount.willRenew -is [bool]) { $willRenew = [bool]$InputAccount.willRenew }
+        $checkedAtUtc = [string]$InputAccount.checkedAtUtc
+        if ($checkedAtUtc.Length -gt 40) { $checkedAtUtc = '' }
+        $subscriptionStatus = [string]$InputAccount.subscriptionStatus
+        if ($subscriptionStatus -notin @('ok', 'auth_error', 'not_paid', 'unavailable')) { $subscriptionStatus = 'unavailable' }
         return [pscustomobject]@{
             rowNumber = $rowNumber
             active = [bool]$InputAccount.active
+            signedOut = $false
             accountLabel = $label
             email = $email
             plan = $plan
+            bankedResets = $bankedResets
+            paidUntil = $paidUntil
+            willRenew = $willRenew
+            checkedAtUtc = $checkedAtUtc
+            subscriptionStatus = $subscriptionStatus
             fiveHour = Convert-SafeUsage $InputAccount.fiveHour
             weekly = Convert-SafeUsage $InputAccount.weekly
         }
     } catch { return $null }
 }
 
-function Get-AccountExpiryText {
-    param([string]$Email)
-    if ([string]::IsNullOrWhiteSpace($Email) -or $null -eq $config.accountExpiryDates) { return '' }
+function Get-AccountEndInfo {
+    param($Account)
+    $email = [string]$Account.email
+    $manualEndDate = ''
+    if ($null -ne $config.accountExpiryDates) {
+        $entry = $config.accountExpiryDates.PSObject.Properties | Where-Object { $_.Name -ieq $email } | Select-Object -First 1
+        if ($entry) { $manualEndDate = [string]$entry.Value }
+    }
+    $endDate = $manualEndDate
+    $source = 'manual'
+    if (-not $Account.signedOut -and $Account.paidUntil -and $Account.checkedAtUtc) {
+        try {
+            $checked = [DateTimeOffset]::Parse([string]$Account.checkedAtUtc, [Globalization.CultureInfo]::InvariantCulture)
+            $age = ([DateTimeOffset]::UtcNow - $checked).TotalDays
+            if ($age -ge 0 -and $age -le 2) {
+                $endDate = [string]$Account.paidUntil
+                $source = 'automatic_period'
+            }
+        } catch { }
+    }
+    $summary = Get-AccountEndSummary -EndDate $endDate
+    $summary | Add-Member -NotePropertyName source -NotePropertyValue $source
+    $summary | Add-Member -NotePropertyName willRenew -NotePropertyValue $Account.willRenew
+    return $summary
+}
+
+function Save-AccountEndDate {
+    param([string]$Email, [string]$EndDate)
+    if (-not (Test-SafeAccountEmail $Email)) { return $false }
     try {
-        $entry = $config.accountExpiryDates.PSObject.Properties | Where-Object { $_.Name -ieq $Email } | Select-Object -First 1
-        if ($null -eq $entry -or [string]::IsNullOrWhiteSpace([string]$entry.Value)) { return '' }
-        $expiry = [DateTime]::ParseExact([string]$entry.Value, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture).Date
-        $days = [int][Math]::Ceiling(($expiry - [DateTime]::Today).TotalDays)
-        if ($days -lt 0) { return 'Expired' }
-        if ($days -eq 0) { return 'Ends today' }
-        if ($days -eq 1) { return '1 day left' }
-        return ('{0} days left' -f $days)
+        $updatedConfig = $config | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+        if ($null -eq $updatedConfig.accountExpiryDates) { $updatedConfig.accountExpiryDates = [pscustomobject]@{} }
+        $existing = $updatedConfig.accountExpiryDates.PSObject.Properties | Where-Object { $_.Name -ieq $Email } | Select-Object -First 1
+        if ($existing) { $updatedConfig.accountExpiryDates.PSObject.Properties.Remove($existing.Name) }
+        if ($EndDate) { $updatedConfig.accountExpiryDates | Add-Member -NotePropertyName $Email -NotePropertyValue $EndDate }
+        $temporaryPath = $configPath + '.tmp'
+        [IO.File]::WriteAllText($temporaryPath, ($updatedConfig | ConvertTo-Json -Depth 8), [Text.UTF8Encoding]::new($false))
+        Move-Item -LiteralPath $temporaryPath -Destination $configPath -Force
+        $script:config = $updatedConfig
+        Render-Accounts
+        return $true
     } catch {
-        return ''
+        Write-SafeLog -Level 'ERROR' -Message 'Account end date could not be saved.'
+        return $false
+    }
+}
+
+function Edit-AccountEndDate {
+    param($Account)
+    try {
+        $email = [string]$Account.email
+        if (-not (Test-SafeAccountEmail $email)) { $panelStatus.Text = 'A valid account email is required.'; return }
+        $script:outsideClickIgnoreUntilUtc = [DateTime]::UtcNow.AddMinutes(2)
+        $current = ''
+        if ($null -ne $config.accountExpiryDates) {
+            $savedDate = $config.accountExpiryDates.PSObject.Properties | Where-Object { $_.Name -ieq $email } | Select-Object -First 1
+            if ($savedDate) { $current = [string]$savedDate.Value }
+        }
+        $dialogXaml = @'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Account end date" Width="320" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False" Topmost="True" FontFamily="Segoe UI" Foreground="#F8FAFC">
+    <Window.Resources>
+        <Style x:Key="RoundedButton" TargetType="{x:Type Button}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Border Margin="7" Padding="18" CornerRadius="12" Background="#FF111827"
+            BorderBrush="#64748B" BorderThickness="1">
+        <StackPanel>
+            <Grid>
+                <TextBlock Text="ACCOUNT END DATE" FontSize="11" FontWeight="SemiBold"
+                           Foreground="#CBD5E1" VerticalAlignment="Center"/>
+                <Button x:Name="CloseButton" Content="X" Width="24" Height="24" FontSize="12"
+                        HorizontalAlignment="Right" Background="Transparent" Foreground="#94A3B8"
+                        BorderThickness="0" Cursor="Hand" Style="{StaticResource RoundedButton}"/>
+            </Grid>
+            <TextBlock x:Name="EmailText" Margin="0,8,0,0" FontSize="12" FontWeight="SemiBold"
+                       TextTrimming="CharacterEllipsis"/>
+            <TextBlock Text="Manual paid-access end date" Margin="0,12,0,10" FontSize="11"
+                       Foreground="#94A3B8"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <TextBlock Text="YEAR" Width="34" FontSize="9" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                <Border Width="64" CornerRadius="7" Background="#FF1E293B" BorderBrush="#64748B" BorderThickness="1">
+                    <TextBox x:Name="YearInput" MaxLength="4" Height="34" Padding="3,5"
+                             FontSize="13" TextAlignment="Center" Background="Transparent" Foreground="#F8FAFC"
+                             BorderThickness="0" CaretBrush="#F8FAFC"/>
+                </Border>
+                <TextBlock Text="MONTH" Width="42" Margin="8,0,0,0" FontSize="9" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                <Border Width="42" CornerRadius="7" Background="#FF1E293B" BorderBrush="#64748B" BorderThickness="1">
+                    <TextBox x:Name="MonthInput" MaxLength="2" Height="34" Padding="3,5"
+                             FontSize="13" TextAlignment="Center" Background="Transparent" Foreground="#F8FAFC"
+                             BorderThickness="0" CaretBrush="#F8FAFC"/>
+                </Border>
+                <TextBlock Text="DAY" Width="27" Margin="8,0,0,0" FontSize="9" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                <Border Width="42" CornerRadius="7" Background="#FF1E293B" BorderBrush="#64748B" BorderThickness="1">
+                    <TextBox x:Name="DayInput" MaxLength="2" Height="34" Padding="3,5"
+                             FontSize="13" TextAlignment="Center" Background="Transparent" Foreground="#F8FAFC"
+                             BorderThickness="0" CaretBrush="#F8FAFC"/>
+                </Border>
+            </StackPanel>
+            <TextBlock x:Name="ErrorText" MinHeight="16" Margin="0,9,0,0"
+                       FontSize="10" Foreground="#FCA5A5"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                <Button x:Name="CancelButton" Content="Cancel" Width="78" Height="30" Margin="0,0,8,0"
+                        Background="#FF1E293B" Foreground="#CBD5E1" BorderBrush="#475569"
+                        BorderThickness="1" Cursor="Hand" Style="{StaticResource RoundedButton}"/>
+                <Button x:Name="SaveButton" Content="Save" Width="78" Height="30" IsDefault="True"
+                        Background="#FF2454A6" Foreground="#F8FAFC" BorderBrush="#60A5FA"
+                        BorderThickness="1" Cursor="Hand" Style="{StaticResource RoundedButton}"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
+'@
+        $dialog = [Windows.Markup.XamlReader]::Parse($dialogXaml)
+        $dialog.Owner = $window
+        $dialog.FindName('EmailText').Text = $email
+        $yearInput = $dialog.FindName('YearInput')
+        $monthInput = $dialog.FindName('MonthInput')
+        $dayInput = $dialog.FindName('DayInput')
+        $errorText = $dialog.FindName('ErrorText')
+        if ($current) {
+            $parts = $current.Split('-')
+            if ($parts.Count -eq 3) { $yearInput.Text = $parts[0]; $monthInput.Text = $parts[1]; $dayInput.Text = $parts[2] }
+        }
+        $digitsOnly = { param($sender, $eventArgs) if ($eventArgs.Text -notmatch '^[0-9]+$') { $eventArgs.Handled = $true } }
+        foreach ($field in @($yearInput, $monthInput, $dayInput)) { $field.add_PreviewTextInput($digitsOnly) }
+        $yearInput.add_TextChanged({
+            if ($yearInput.IsKeyboardFocused -and $yearInput.Text.Length -eq 4) { $null = $monthInput.Focus(); $monthInput.SelectAll() }
+        }.GetNewClosure())
+        $monthInput.add_TextChanged({
+            if ($monthInput.IsKeyboardFocused -and $monthInput.Text.Length -eq 2) { $null = $dayInput.Focus(); $dayInput.SelectAll() }
+        }.GetNewClosure())
+        $dialog.FindName('CloseButton').add_Click({ $dialog.DialogResult = $false }.GetNewClosure())
+        $dialog.FindName('CancelButton').add_Click({ $dialog.DialogResult = $false }.GetNewClosure())
+        $dialog.FindName('SaveButton').add_Click({
+            $year = $yearInput.Text.Trim(); $month = $monthInput.Text.Trim(); $day = $dayInput.Text.Trim()
+            if (-not $year -and -not $month -and -not $day) { $dialog.Tag = ''; $dialog.DialogResult = $true; return }
+            if ($year -notmatch '^[0-9]{4}$' -or $month -notmatch '^[0-9]{2}$' -or $day -notmatch '^[0-9]{2}$') {
+                $errorText.Text = 'Enter a complete date: YYYY  MM  DD'; return
+            }
+            $value = '{0}-{1}-{2}' -f $year, $month, $day
+            try { $null = [DateTime]::ParseExact($value, 'yyyy-MM-dd', [Globalization.CultureInfo]::InvariantCulture) }
+            catch { $errorText.Text = 'Enter a valid calendar date.'; return }
+            $dialog.Tag = $value
+            $dialog.DialogResult = $true
+        }.GetNewClosure())
+        [Windows.Input.FocusManager]::SetFocusedElement($dialog, $yearInput)
+        if ($dialog.ShowDialog() -eq $true) {
+            if (Save-AccountEndDate -Email $email -EndDate ([string]$dialog.Tag)) { $panelStatus.Text = 'Account end date saved.' }
+            else { $panelStatus.Text = 'End date could not be saved.' }
+        }
+    } catch {
+        Write-SafeLog -Level 'ERROR' -Message ('Date editor failed: {0} at line {1}.' -f $_.Exception.GetType().Name, $_.InvocationInfo.ScriptLineNumber)
+        $panelStatus.Text = 'Date editor could not be opened.'
+    } finally {
+        $script:outsideClickIgnoreUntilUtc = [DateTime]::UtcNow.AddSeconds(1)
+    }
+}
+
+function New-SignedOutRowData {
+    param($Entry)
+    return [pscustomobject]@{
+        rowNumber = 0; active = $false; signedOut = $true
+        accountLabel = [string]$Entry.email; email = [string]$Entry.email; plan = [string]$Entry.plan
+        fiveHour = [pscustomobject]@{ status = 'unavailable' }
+        weekly = [pscustomobject]@{ status = 'unavailable' }
+    }
+}
+$script:accounts = @($script:signedOutAccounts | ForEach-Object { New-SignedOutRowData -Entry $_ })
+
+function Add-SignedOutAccount {
+    param($Account)
+    $email = [string]$Account.email
+    if (-not (Test-SafeAccountEmail $email)) { return $false }
+    try {
+        $script:signedOutAccounts = @($script:signedOutAccounts | Where-Object { -not $_.email.Equals($email, [StringComparison]::OrdinalIgnoreCase) }) +
+            @([pscustomobject]@{ email = $email; plan = [string]$Account.plan })
+        Write-SignedOutAccounts -Path $signedOutAccountsPath -Accounts $script:signedOutAccounts
+        return $true
+    } catch {
+        Write-SafeLog -Level 'ERROR' -Message 'Signed-out account reminder could not be saved.'
+        return $false
+    }
+}
+
+function Forget-SignedOutAccount {
+    param($Account)
+    $email = [string]$Account.email
+    if (-not (Test-SafeAccountEmail $email)) { return }
+    try {
+        $script:signedOutAccounts = @($script:signedOutAccounts | Where-Object { -not $_.email.Equals($email, [StringComparison]::OrdinalIgnoreCase) })
+        Write-SignedOutAccounts -Path $signedOutAccountsPath -Accounts $script:signedOutAccounts
+        $script:accounts = @($script:accounts | Where-Object { -not ($_.signedOut -and $_.email.Equals($email, [StringComparison]::OrdinalIgnoreCase)) })
+        $null = Save-AccountEndDate -Email $email -EndDate ''
+        Render-Accounts
+        Update-ExpandedWindowSize
+        $panelStatus.Text = 'Saved email removed from overlay.'
+    } catch {
+        $panelStatus.Text = 'Saved email could not be removed.'
+        Write-SafeLog -Level 'ERROR' -Message 'Signed-out email could not be forgotten.'
     }
 }
 
@@ -883,7 +1106,7 @@ function New-AccountRow {
     $row.Background = if ($Account.active) { $brushActiveRow } else { $brushTransparent }
     $row.Cursor = [Windows.Input.Cursors]::Hand
     $row.Focusable = $false
-    $row.ToolTip = if ($Account.active) { 'Active account' } else { 'Click to switch to this account' }
+    $row.ToolTip = if ($Account.signedOut -or $Account.subscriptionStatus -eq 'auth_error') { 'Click to open OpenAI device login; enter the code and choose this email' } elseif ($Account.active) { 'Active account' } else { 'Click to switch to this account' }
 
     $rowMenu = [Windows.Controls.ContextMenu]::new()
     $rowMenu.Background = Get-Brush '#FF172033'
@@ -912,7 +1135,7 @@ function New-AccountRow {
         $script:accountMenuItemTemplate = [Windows.Markup.XamlReader]::Parse($menuItemTemplateXaml)
     }
     $removeMenuItem = [Windows.Controls.MenuItem]::new()
-    $removeMenuItem.Header = 'Log out & remove'
+    $removeMenuItem.Header = if ($Account.signedOut) { 'Forget saved email' } else { 'Log out & remove' }
     $removeMenuItem.Foreground = Get-Brush '#FCA5A5'
     $removeMenuItem.Background = Get-Brush '#FF172033'
     $logoutArrow = [Windows.Shapes.Path]::new()
@@ -922,14 +1145,24 @@ function New-AccountRow {
     $removeMenuItem.Icon = $logoutArrow
     $removeMenuItem.Template = $script:accountMenuItemTemplate
     $removeMenuItem.Tag = $Account
-    $removeMenuItem.ToolTip = 'Remove this local login from codex-auth'
+    $removeMenuItem.ToolTip = if ($Account.signedOut) { 'Forget only this overlay reminder' } else { 'Remove this local login from codex-auth' }
     $removeMenuItem.add_Click({
         param($sender, $eventArgs)
         $eventArgs.Handled = $true
         $script:outsideClickIgnoreUntilUtc = [DateTime]::UtcNow.AddSeconds(2)
-        Start-AccountRemoval -Account $sender.Tag
+        if ($sender.Tag.signedOut) { Forget-SignedOutAccount -Account $sender.Tag }
+        else { Start-AccountRemoval -Account $sender.Tag }
     })
     $null = $rowMenu.Items.Add($removeMenuItem)
+    $dateMenuItem = [Windows.Controls.MenuItem]::new()
+    $dateMenuItem.Header = 'Set end date...'
+    $dateMenuItem.Foreground = Get-Brush '#DBEAFE'
+    $dateMenuItem.Background = Get-Brush '#FF172033'
+    $dateMenuItem.Template = $script:accountMenuItemTemplate
+    $dateMenuItem.Tag = $Account
+    $dateMenuItem.ToolTip = 'Use the date paid access ends; billing renewal may continue the plan'
+    $dateMenuItem.add_Click({ param($sender, $eventArgs) $eventArgs.Handled = $true; Edit-AccountEndDate -Account $sender.Tag })
+    $null = $rowMenu.Items.Add($dateMenuItem)
     $row.ContextMenu = $rowMenu
 
     $grid = [Windows.Controls.Grid]::new()
@@ -960,16 +1193,33 @@ function New-AccountRow {
     [Windows.Controls.Grid]::SetColumn($email, 1)
     $null = $grid.Children.Add($email)
 
-    $planParts = @([string]$Account.plan)
-    $expiryText = Get-AccountExpiryText -Email ([string]$Account.email)
-    if ($expiryText) { $planParts += $expiryText }
-    if ($Account.active) { $planParts += 'ACTIVE' }
+    $endInfo = Get-AccountEndInfo -Account $Account
+    $resetCountText = if ($null -ne $Account.bankedResets) { [string]$Account.bankedResets } else { '--' }
+    $dateText = if ($endInfo.endDate -and $endInfo.source -eq 'automatic_period' -and $endInfo.willRenew -eq $true) {
+        'Renews: {0}' -f $endInfo.daysText
+    } elseif ($endInfo.endDate -and $endInfo.source -eq 'automatic_period' -and $endInfo.willRenew -eq $false) {
+        [string]$endInfo.daysText
+    } elseif ($endInfo.endDate -and $endInfo.source -eq 'automatic_period') {
+        'Period: {0}' -f $endInfo.daysText
+    } elseif ($endInfo.endDate) { 'Manual: {0}' -f $endInfo.daysText }
+      elseif ($Account.subscriptionStatus -eq 'auth_error') { 'Sign in to update' }
+      else { 'Date unavailable' }
+    $planParts = @([string]$Account.plan, $resetCountText, $dateText)
     $planText = $planParts -join ' | '
     $plan = [Windows.Controls.TextBlock]::new()
     $plan.Text = $planText; $plan.Foreground = if ($Account.active) { Get-Brush '#BFDBFE' } else { Get-Brush '#94A3B8' }
-    $plan.FontFamily = [Windows.Media.FontFamily]::new('Segoe UI'); $plan.FontSize = 9.5; $plan.FontWeight = [Windows.FontWeights]::Medium
+    $plan.ToolTip = if ($Account.subscriptionStatus -eq 'auth_error') { 'OpenAI rejected this login. Click to sign in again and update the date.' } else { 'Number: available banked resets. Date: live OpenAI paid period end; renewal status determines whether access ends then. Click to set a fallback date.' }
+    $plan.Cursor = [Windows.Input.Cursors]::Hand
+    $plan.FontFamily = [Windows.Media.FontFamily]::new('Segoe UI'); $plan.FontSize = 9; $plan.FontWeight = [Windows.FontWeights]::Medium
     $plan.VerticalAlignment = [Windows.VerticalAlignment]::Center; $plan.Margin = [Windows.Thickness]::new(7, 0, 0, 0)
     [Windows.Controls.Grid]::SetColumn($plan, 2)
+    $plan.Tag = $Account
+    $plan.add_MouseLeftButtonUp({
+        param($sender, $eventArgs)
+        $eventArgs.Handled = $true
+        if ($sender.Tag.subscriptionStatus -eq 'auth_error') { Start-NewLogin -ExpectedEmail ([string]$sender.Tag.email) }
+        else { Edit-AccountEndDate -Account $sender.Tag }
+    })
     $null = $grid.Children.Add($plan)
 
     $usageGrid = [Windows.Controls.Grid]::new()
@@ -982,7 +1232,7 @@ function New-AccountRow {
 
     $fiveSummary = Get-AccountUsageSummary -Usage $Account.fiveHour -Label '5H'
     $five = [Windows.Controls.TextBlock]::new()
-    $five.Text = $fiveSummary.text; $five.ToolTip = $fiveSummary.text; $five.Foreground = $fiveSummary.brush
+    $five.Text = if ($Account.signedOut) { '5H signed out' } else { $fiveSummary.text }; $five.ToolTip = $five.Text; $five.Foreground = if ($Account.signedOut) { $brushUnavailable } else { $fiveSummary.brush }
     $five.FontFamily = [Windows.Media.FontFamily]::new('Segoe UI'); $five.FontSize = 10.5; $five.FontWeight = [Windows.FontWeights]::Medium
     $five.TextTrimming = [Windows.TextTrimming]::CharacterEllipsis; $five.Margin = [Windows.Thickness]::new(0, 0, 5, 0)
     $null = $usageGrid.Children.Add($five)
@@ -994,7 +1244,7 @@ function New-AccountRow {
 
     $weekSummary = Get-AccountUsageSummary -Usage $Account.weekly -Label '7D'
     $week = [Windows.Controls.TextBlock]::new()
-    $week.Text = $weekSummary.text; $week.ToolTip = $weekSummary.text; $week.Foreground = $weekSummary.brush
+    $week.Text = if ($Account.signedOut) { '7D signed out' } else { $weekSummary.text }; $week.ToolTip = $week.Text; $week.Foreground = if ($Account.signedOut) { $brushUnavailable } else { $weekSummary.brush }
     $week.FontFamily = [Windows.Media.FontFamily]::new('Segoe UI'); $week.FontSize = 10.5; $week.FontWeight = [Windows.FontWeights]::Medium
     $week.TextTrimming = [Windows.TextTrimming]::CharacterEllipsis; $week.Margin = [Windows.Thickness]::new(7, 0, 0, 0)
     [Windows.Controls.Grid]::SetColumn($week, 2)
@@ -1007,7 +1257,8 @@ function New-AccountRow {
     $row.add_MouseLeftButtonUp({
         param($sender, $eventArgs)
         $eventArgs.Handled = $true
-        Start-AccountSwitch -Account $sender.Tag
+        if ($sender.Tag.signedOut -or $sender.Tag.subscriptionStatus -eq 'auth_error') { Start-NewLogin -ExpectedEmail ([string]$sender.Tag.email) }
+        else { Start-AccountSwitch -Account $sender.Tag }
     })
     return $row
 }
@@ -1046,7 +1297,8 @@ function Render-Accounts {
         return
     }
     foreach ($account in $script:accounts) { $null = $accountsHost.Children.Add((New-AccountRow -Account $account)) }
-    $accountsTitle.Text = 'ACCOUNTS  {0}' -f $script:accounts.Count
+    $signedOutCount = @($script:accounts | Where-Object signedOut).Count
+    $accountsTitle.Text = if ($signedOutCount) { 'ACCOUNTS  {0}  |  SIGNED OUT  {1}' -f ($script:accounts.Count - $signedOutCount), $signedOutCount } else { 'ACCOUNTS  {0}' -f $script:accounts.Count }
 }
 
 function Set-AccountsPanelExpanded {
@@ -1124,19 +1376,28 @@ function Apply-AccountsResult {
     # Keep healthy accounts first, then accounts at 0% in either cycle, then
     # errors/unavailable data. Within each group, rank by the lower of the two
     # usable percentages so both 5-hour and weekly capacity are considered.
+    $signedInEmails = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($account in $safeAccounts) { $null = $signedInEmails.Add([string]$account.email) }
+    $stillSignedOut = @($script:signedOutAccounts | Where-Object { -not $signedInEmails.Contains([string]$_.email) })
+    if ($stillSignedOut.Count -ne $script:signedOutAccounts.Count) {
+        $script:signedOutAccounts = $stillSignedOut
+        try { Write-SignedOutAccounts -Path $signedOutAccountsPath -Accounts $stillSignedOut }
+        catch { Write-SafeLog -Level 'WARN' -Message 'Reconnected account reminder could not be updated.' }
+    }
     $script:accounts = @($safeAccounts | Sort-Object `
         @{ Expression = { Get-AccountSortBucket $_ }; Descending = $true },
         @{ Expression = { [Math]::Min((Get-AccountUsageRank $_.fiveHour), (Get-AccountUsageRank $_.weekly)) }; Descending = $true },
         @{ Expression = { Get-AccountUsageRank $_.fiveHour }; Descending = $true },
         @{ Expression = { Get-AccountUsageRank $_.weekly }; Descending = $true },
-        @{ Expression = { [int]$_.rowNumber }; Descending = $false })
+        @{ Expression = { [int]$_.rowNumber }; Descending = $false }) +
+        @($script:signedOutAccounts | ForEach-Object { New-SignedOutRowData -Entry $_ })
     $active = $activeAccounts[0]
     $script:activeRowNumber = [int]$active.rowNumber
     $script:fiveHourUsage = $active.fiveHour
     $script:weeklyUsage = $active.weekly
     $script:lastSuccessfulRefreshUtc = [DateTime]::UtcNow
     $script:lastErrorCode = ''
-    $panelStatus.Text = '{0} accounts | updated {1}' -f $script:accounts.Count, [DateTime]::Now.ToString('HH:mm:ss')
+    $panelStatus.Text = '{0} signed in | updated {1}' -f $safeAccounts.Count, [DateTime]::Now.ToString('HH:mm:ss')
     Update-UsageDisplay
     Render-Accounts
     Update-ExpandedWindowSize
@@ -1292,6 +1553,7 @@ function Start-AccountRemoval {
         $script:removeOutputTask = $script:removeProcess.StandardOutput.ReadToEndAsync()
         $script:removeErrorTask = $script:removeProcess.StandardError.ReadToEndAsync()
         $script:removeStartedUtc = [DateTime]::UtcNow
+        $script:removingAccount = $Account
         $accountsHost.IsEnabled = $false
         $panelStatus.Text = 'Logging out and removing account...'
         Write-SafeLog -Level 'INFO' -Message 'User confirmed local account logout/removal.'
@@ -1316,7 +1578,15 @@ function Complete-AccountRemovalIfReady {
         $null = $script:removeErrorTask.GetAwaiter().GetResult()
         $exitCode = $script:removeProcess.ExitCode
         if ($exitCode -eq 0) {
-            $panelStatus.Text = 'Logged out and removed | restart Codex to apply'
+            $reminderSaved = Add-SignedOutAccount -Account $script:removingAccount
+            $script:accounts = @($script:accounts | Where-Object { -not ($_.email.Equals([string]$script:removingAccount.email, [StringComparison]::OrdinalIgnoreCase)) })
+            if ($reminderSaved) { $script:accounts += (New-SignedOutRowData -Entry $script:removingAccount) }
+            if ($script:removingAccount.active) {
+                $script:activeRowNumber = 0; $script:fiveHourUsage = $null; $script:weeklyUsage = $null
+                Update-UsageDisplay
+            }
+            Render-Accounts
+            $panelStatus.Text = if ($reminderSaved) { 'Signed out | click email to sign in again' } else { 'Signed out | reminder could not be saved' }
             $notifyIcon.ShowBalloonTip(7000, 'Codex account removed', 'The local login was removed. Restart Codex to apply the change.', [Windows.Forms.ToolTipIcon]::Info)
             Write-SafeLog -Level 'INFO' -Message 'Local account logout/removal completed successfully.'
         } elseif ($exitCode -eq 12) {
@@ -1338,6 +1608,7 @@ function Complete-AccountRemovalIfReady {
         $script:outsideClickIgnoreUntilUtc = [DateTime]::UtcNow.AddSeconds(1)
         $script:removeProcess.Dispose(); $script:removeProcess = $null
         $script:removeOutputTask = $null; $script:removeErrorTask = $null; $script:removeStartedUtc = $null
+        $script:removingAccount = $null
         $accountsHost.IsEnabled = $true
         Start-UsageRefresh
         if ($keepPanelExpanded -and -not $script:menuExpanded) { Set-AccountsPanelExpanded -Expanded $true }
@@ -1377,19 +1648,22 @@ function Complete-AccountSwitchIfReady {
 }
 
 function Start-NewLogin {
+    param([string]$ExpectedEmail = '')
     if (-not (Test-Path -LiteralPath $newLoginPath -PathType Leaf)) { $panelStatus.Text = 'Login helper is unavailable.'; return }
+    if ($ExpectedEmail -and -not (Test-SafeAccountEmail $ExpectedEmail)) { $panelStatus.Text = 'A valid account email is required.'; return }
     try {
         $powerShellPath = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
         if ($newLoginPath.Contains('"')) { throw 'invalid-path' }
         $arguments = '-NoLogo -NoProfile -ExecutionPolicy Bypass -File "{0}"' -f $newLoginPath
+        if ($ExpectedEmail) { $arguments += ' -ExpectedEmail "{0}"' -f $ExpectedEmail }
         if ([string]$config.codexAuthExecutable) {
             $cli = [string]$config.codexAuthExecutable
             if ($cli.Contains('"')) { throw 'invalid-path' }
             $arguments += ' -CodexAuthExecutable "{0}"' -f $cli
         }
         Start-Process -FilePath $powerShellPath -ArgumentList $arguments -WorkingDirectory $installDirectory -WindowStyle Normal
-        $panelStatus.Text = 'Login window opened | refresh after completion'
-        Write-SafeLog -Level 'INFO' -Message 'New login window opened by user request.'
+        $panelStatus.Text = if ($ExpectedEmail) { 'Device login opened | enter code, then choose selected email' } else { 'Device login opened | enter code to continue' }
+        Write-SafeLog -Level 'INFO' -Message 'Login window opened by user request.'
     } catch {
         $panelStatus.Text = 'Login window could not be opened.'
         Write-SafeLog -Level 'ERROR' -Message 'New login window could not be opened.'
